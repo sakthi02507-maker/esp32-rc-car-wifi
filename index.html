@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 WiFi RC Car</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #101820;
+            color: white;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 20px 0;
+        }
+
+        .status {
+            margin: 10px auto 20px;
+            padding: 10px;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 10px;
+            background: #222;
+        }
+
+        .controls {
+            max-width: 500px;
+            margin: auto;
+            padding: 15px;
+        }
+
+        button {
+            border: none;
+            border-radius: 12px;
+            padding: 18px;
+            margin: 6px;
+            min-width: 110px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            background: #263238;
+            color: white;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .drive {
+            background: #1565c0;
+        }
+
+        .stop {
+            background: #c62828;
+        }
+
+        .toggle {
+            background: #6a1b9a;
+        }
+
+        .lights {
+            background: #ef6c00;
+        }
+
+        .speed-box {
+            margin-top: 25px;
+            padding: 15px;
+            background: #1c252c;
+            border-radius: 12px;
+        }
+
+        input[type="range"] {
+            width: 90%;
+        }
+
+        #speedValue {
+            font-size: 22px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🚗 ESP32 WiFi RC Car</h1>
+
+    <div class="status">
+        <span id="status">Connecting...</span>
+    </div>
+
+    <div class="controls">
+
+        <h2>🚘 Car Control</h2>
+
+        <div>
+            <button class="drive"
+                onclick="sendCommand('V0', 1)">
+                ⬆️ FORWARD
+            </button>
+        </div>
+
+        <div>
+            <button class="drive"
+                onclick="sendCommand('V2', 1)">
+                ⬅️ LEFT
+            </button>
+
+            <button class="stop"
+                onclick="sendCommand('V4', 1)">
+                🛑 STOP
+            </button>
+
+            <button class="drive"
+                onclick="sendCommand('V3', 1)">
+                ➡️ RIGHT
+            </button>
+        </div>
+
+        <div>
+            <button class="drive"
+                onclick="sendCommand('V1', 1)">
+                ⬇️ BACKWARD
+            </button>
+        </div>
+
+
+        <h2>💡 Lights</h2>
+
+        <button class="lights"
+            onclick="togglePin('V6')">
+            Front Left
+        </button>
+
+        <button class="lights"
+            onclick="togglePin('V7')">
+            Front Right
+        </button>
+
+        <br>
+
+        <button class="lights"
+            onclick="togglePin('V8')">
+            Back Left
+        </button>
+
+        <button class="lights"
+            onclick="togglePin('V9')">
+            Back Right
+        </button>
+
+
+        <h2>🔊 Smoke / RGB</h2>
+
+        <button class="toggle"
+            onclick="togglePin('V5')">
+            💨 Smoke
+        </button>
+
+        <button class="toggle"
+            onclick="togglePin('V10')">
+            🌈 RGB
+        </button>
+
+
+        <div class="speed-box">
+
+            <h2>⚡ Motor Speed</h2>
+
+            <input
+                type="range"
+                id="speed"
+                min="0"
+                max="255"
+                value="150"
+                oninput="changeSpeed(this.value)"
+            >
+
+            <p>
+                Speed:
+                <span id="speedValue">150</span>
+            </p>
+
+        </div>
+
+    </div>
+
+
+<script>
+
+    // ==========================================
+    // BLYNK CONFIGURATION
+    // ==========================================
+
+    const AUTH_TOKEN =
+        "UbDREBmmMfD9MnPcqZf6TNMAfLcI1luR";
+
+    const BLYNK_SERVER =
+        "https://blynk.cloud";
+
+
+    // ==========================================
+    // SEND DATA TO BLYNK
+    // ==========================================
+
+    async function sendCommand(pin, value) {
+
+        const url =
+            BLYNK_SERVER +
+            "/external/api/update?token=" +
+            AUTH_TOKEN +
+            "&" +
+            pin +
+            "=" +
+            value;
+
+        try {
+
+            const response = await fetch(url);
+
+            if (response.ok) {
+                document.getElementById("status").innerText =
+                    "🟢 Connected";
+            }
+            else {
+                document.getElementById("status").innerText =
+                    "🔴 Blynk Error";
+            }
+
+        }
+        catch (error) {
+
+            document.getElementById("status").innerText =
+                "🔴 Connection Error";
+
+            console.error(error);
+        }
+    }
+
+
+    // ==========================================
+    // TOGGLE BUTTONS
+    // ==========================================
+
+    const states = {};
+
+    function togglePin(pin) {
+
+        if (states[pin] === undefined) {
+            states[pin] = 0;
+        }
+
+        states[pin] =
+            states[pin] === 0 ? 1 : 0;
+
+        sendCommand(pin, states[pin]);
+    }
+
+
+    // ==========================================
+    // MOTOR SPEED
+    // ==========================================
+
+    function changeSpeed(value) {
+
+        document.getElementById("speedValue").innerText =
+            value;
+
+        sendCommand("V11", value);
+    }
+
+
+    // ==========================================
+    // INITIAL STATUS
+    // ==========================================
+
+    document.getElementById("status").innerText =
+        "🟢 Dashboard Ready";
+
+</script>
+
+</body>
+</html>
